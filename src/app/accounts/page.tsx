@@ -1,5 +1,4 @@
 import { getPosts } from "@/Action/posts";
-
 interface Post {
   id: number;
   description: string;
@@ -18,6 +17,16 @@ interface Post {
   tag_restaurants?: Array<{ id: number; name: string }>;
 }
 
+interface GetPostsResult {
+  error?: string;
+  data?: {
+    data?: {
+      rows: Post[];
+      count: number;
+    };
+  };
+}
+
 async function AccountsPage() {
   const result = await getPosts();
 
@@ -32,8 +41,8 @@ async function AccountsPage() {
     );
   }
 
-  const posts = result.data?.data?.rows || [];
-  const totalCount = result.data?.data?.count || 0;
+  const posts: Post[] = result.data?.data?.rows || [];
+  const totalCount: number = result.data?.data?.count || 0;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
