@@ -36,8 +36,8 @@ export async function login(formData: FormData) {
   // Set secure HttpOnly cookies
   const jar = await cookies();
   jar.set("token", accessToken, {
-    httpOnly: false,
-    secure: false, // keep true in prod (HTTPS)
+    httpOnly: true,
+    secure: true, // keep true in prod (HTTPS)
     sameSite: "lax",
     path: "/",
     maxAge,

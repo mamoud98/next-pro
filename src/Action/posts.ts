@@ -34,3 +34,9 @@ export async function getPosts() {
     return { error: "An error occurred while fetching posts" };
   }
 }
+
+export const getCookies = async () => {
+  const jar = await cookies();
+  const token = jar.get("token")?.value;
+  return { token };
+};

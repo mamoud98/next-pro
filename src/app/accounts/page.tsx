@@ -17,16 +17,6 @@ interface Post {
   tag_restaurants?: Array<{ id: number; name: string }>;
 }
 
-interface GetPostsResult {
-  error?: string;
-  data?: {
-    data?: {
-      rows: Post[];
-      count: number;
-    };
-  };
-}
-
 async function AccountsPage() {
   const result = await getPosts();
 
