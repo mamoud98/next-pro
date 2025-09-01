@@ -31,7 +31,10 @@ function PostsPage() {
     const getCookie = (name: string) => {
       const value = `; ${document.cookie}`;
       const parts = value.split(`; ${name}=`);
+      console.log(parts, "pppppppppppppppppppppppppp");
+
       if (parts.length > 0) {
+        console.log(parts, "ssssssssssssssssssssssssssssssssssssss");
         const part = parts.pop();
         return part ? part.split(";").shift() : undefined;
       }
