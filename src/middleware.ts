@@ -1,45 +1,51 @@
+// middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { verifyToken } from "./lib/verifyToken";
 
-export function middleware(req: NextRequest) {
+const PROTECTED_PREFIXES = ["/profile", "/accounts", "/posts"];
+
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-
-  // Debug: Log the request
-  console.log("Middleware running for:", pathname);
-
-  // Get token from cookies
   const token = req.cookies.get("token")?.value;
-  console.log("Token found:", !!token);
 
-  // Handle login page
+  const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
+
+  // 1) Allow /login logic first (fast path)
   if (pathname.startsWith("/login")) {
-    console.log("Login page accessed");
-    if (token) {
-      console.log("User has token, redirecting to profile");
+    if (!token) return NextResponse.next();
+
+    // Optional: verify token before redirecting to /profile
+    const verified = await verifyToken(token);
+    if (verified) {
       return NextResponse.redirect(new URL("/profile", req.url));
+    } else {
+      // stale token on login page: clear it and stay on login
+      const res = NextResponse.next();
+      res.cookies.delete("token");
+      return res;
     }
-    console.log("No token, allowing access to login");
-    return NextResponse.next();
   }
 
-  // Handle protected routes
-  const protectedRoutes = ["/profile", "/accounts"];
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
-
-  if (isProtectedRoute) {
-    console.log("Protected route accessed:", pathname);
+  // 2) For protected routes, enforce auth
+  if (isProtected) {
     if (!token) {
-      console.log("No token found, redirecting to login");
       return NextResponse.redirect(new URL("/login", req.url));
     }
-    console.log("Token found, allowing access");
+
+    const verified = await verifyToken(token);
+    if (!verified) {
+      const res = NextResponse.redirect(new URL("/login", req.url));
+      res.cookies.delete("token");
+      return res;
+    }
   }
 
+  // 3) Everything else passes through
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/login", "/profile", "/accounts"],
+  // Covers subpaths like /profile/edit, /accounts/123, /posts/new + login page
+  matcher: ["/login", "/(profile|accounts|posts)(.*)"],
 };

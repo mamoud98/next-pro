@@ -1,4 +1,6 @@
-import { getPosts } from "@/Action/posts";
+"use client";
+
+import { useState, useEffect } from "react";
 
 interface Post {
   id: number;
@@ -18,28 +20,86 @@ interface Post {
   tag_restaurants?: Array<{ id: number; name: string }>;
 }
 
-async function AccountsPage() {
-  const result = await getPosts();
+function PostsPage() {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [token, setToken] = useState<string | undefined>(undefined);
 
-  if (result.error) {
+  useEffect(() => {
+    const getCookie = (name: string) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(";").shift();
+    };
+
+    setToken(getCookie("token"));
+  }, []);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(
+          "https://crm-api-test.vindo.ai/api/v6/customer-portal/post/list",
+          {
+            method: "GET",
+            headers: {
+              Authorization: token ? token : "",
+              "Content-Type": "application/json",
+            },
+            cache: "no-store",
+          }
+        );
+        const result = await response.json();
+
+        if (result.error) {
+          setError(result.error);
+        } else {
+          setPosts(result.data?.rows || []);
+          setTotalCount(result.data?.count || 0);
+        }
+      } catch (err) {
+        setError("Failed to fetch posts");
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (token) {
+      fetchPosts();
+    }
+  }, [token]);
+
+  console.log(posts, "sssssssssssss");
+
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
-          <p className="text-gray-600">{result.error}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading posts...</p>
         </div>
       </div>
     );
   }
 
-  const posts = result.data?.data?.rows || [];
-  const totalCount = result.data?.data?.count || 0;
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
+          <p className="text-gray-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Community Posts</h1>
+          <h1 className="text-3xl font-bold text-gray-900">All Posts</h1>
           <p className="mt-2 text-gray-600">
             Showing {posts.length} of {totalCount} posts
           </p>
@@ -264,4 +324,4 @@ async function AccountsPage() {
   );
 }
 
-export default AccountsPage;
+export default PostsPage;

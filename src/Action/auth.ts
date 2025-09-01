@@ -1,13 +1,7 @@
 "use server";
 
-import { log } from "console";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-
-type ExternalAuthResponse = {
-  accessToken: string;
-  expiresIn?: number; // seconds
-};
 
 export async function login(formData: FormData) {
   const email = String(formData.get("email") || "");
@@ -42,8 +36,8 @@ export async function login(formData: FormData) {
   // Set secure HttpOnly cookies
   const jar = await cookies();
   jar.set("token", accessToken, {
-    httpOnly: true,
-    secure: true, // keep true in prod (HTTPS)
+    httpOnly: false,
+    secure: false, // keep true in prod (HTTPS)
     sameSite: "lax",
     path: "/",
     maxAge,
